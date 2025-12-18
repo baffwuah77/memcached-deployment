@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  memcached:
+    image: ghcr.io/baffwuah77/memcached:latest
+    container_name: memcached
+    restart: unless-stopped
+    
+    ports:
+      - "11211:11211"
+    
+    networks:
+      - memcached-network
+    
+    security_opt:
+      - no-new-privileges:true
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "11211"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  memcached-network:
+    driver: bridge
