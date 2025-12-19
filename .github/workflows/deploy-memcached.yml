@@ -1,0 +1,48 @@
+name: Build and Deploy Memcached
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/memcached
+
+jobs:
+  build-and-push:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/memcached:latest
+            ghcr.io/${{ github.repository }}/memcached:${{ github.sha }}
+          build-args: |
+            MEMCACHED_VERSION=${{ secrets.MEMCACHED_VERSION }}
+            MEMCACHED_MAX_MEMORY=${{ secrets.MEMCACHED_MAX_MEMORY }}
+            MEMCACHED_MAX_CONNECTIONS=${{ secrets.MEMCACHED_MAX_CONNECTIONS }}
+            MEMCACHED_PORT=${{ secrets.MEMCACHED_PORT }}
+            MEMCACHED_THREADS=${{ secrets.MEMCACHED_THREADS }}
+            MEMCACHED_MAX_ITEM_SIZE=${{ secrets.MEMCACHED_MAX_ITEM_SIZE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
